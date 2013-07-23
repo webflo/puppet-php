@@ -18,12 +18,12 @@ class php {
 
   file {
     [
-      "${php::config::root}",
-      "${php::config::logdir}",
-      "${php::config::datadir}",
-      "${php::config::pluginsdir}",
-      "${php::config::cachedir}",
-      "${php::config::extensioncachedir}",
+      $php::config::root,
+      $php::config::logdir,
+      $php::config::datadir,
+      $php::config::pluginsdir,
+      $php::config::cachedir,
+      $php::config::extensioncachedir,
     ]:
     ensure => directory
   }
@@ -36,7 +36,7 @@ class php {
     recurse => true,
     purge   => true,
     force   => true,
-    source => "puppet:///modules/php/empty-conf-dir",
+    source  => 'puppet:///modules/php/empty-conf-dir',
   }
 
   file {
@@ -56,22 +56,16 @@ class php {
 
   # Resolve dependencies
 
-  exec { 'tap-homebrew-dupes':
-    command => "brew tap homebrew/dupes",
-    creates => "${homebrew::config::tapsdir}/homebrew-dupes",
-  }
-
   package { [
       'freetype',
       'gmp',
       'icu4c',
       'jpeg',
       'libpng',
+      'libevent',
       'mcrypt',
-      'homebrew/dupes/zlib',
     ]:
     provider => homebrew,
-    require  => Exec['tap-homebrew-dupes'],
   }
 
   # Need autoconf version less than 2.59 for php 5.3 (ewwwww)
@@ -82,6 +76,25 @@ class php {
 
   package { 'boxen/brews/autoconf213':
     ensure => '2.13-boxen1',
+  }
+
+  # Install dupe version of zlib as tapping homebrew dupes appears to have
+  # broken. I've also tried to build a specific zlib module, but this also
+  # will not currently install via brew within boxen
+  #
+  # See https://github.com/boxen/puppet-homebrew/issues/14
+  #
+  # Note: this will work for newly installed versions of PHP, but will NOT
+  # work for versions of PHP installed prior to this. The best solution you
+  # have is to remove those versions manually and Boxen will re-install
+
+  homebrew::formula { 'zlibphp':
+    source => 'puppet:///modules/php/brews/zlib.rb',
+    before => Package['boxen/brews/zlibphp'] ;
+  }
+
+  package { 'boxen/brews/zlibphp':
+    ensure => '1.2.8-boxen1',
   }
 
   # Set up phpenv
@@ -108,17 +121,10 @@ class php {
     require => Exec['phpenv-setup-root-repo']
   }
 
-  # This needs something to stop it running each time, rbenv class greps both
-  # libexec and shims/gem
-  exec { 'phpenv-rehash-post-install':
-    command => "/bin/rm -rf ${php::config::root}/shims && PHPENV_ROOT=${php::config::root} ${php::config::root}/bin/phpenv rehash",
-    require => Exec["ensure-phpenv-version-${phpenv_version}"],
-  }
-
   # Cache the PHP src repository we'll need this for extensions
   # and at some point building versions #todo
   repository { "${php::config::root}/php-src":
-    source => "php/php-src",
+    source => 'php/php-src',
   }
 
   # Shared PEAR data directory - used for downloads & cache
@@ -130,11 +136,11 @@ class php {
   }
 
   # Kill off the legacy PHP-FPM daemon as we're moving to per version instances
-  file { "/Library/LaunchDaemons/dev.php-fpm.plist":
+  file { '/Library/LaunchDaemons/dev.php-fpm.plist':
     ensure  => 'absent',
-    require => Service["dev.php-fpm"]
+    require => Service['dev.php-fpm']
   }
-  service { "dev.php-fpm":
+  service { 'dev.php-fpm':
     ensure => stopped,
   }
 

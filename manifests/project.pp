@@ -63,6 +63,12 @@
 #     source =>
 #       Repo to clone project from. REQUIRED. Supports shorthand <user>/<repo>.
 #
+#     server_name =>
+#       The hostname to use when accessing the application.
+#
+#     fpm_pool =>
+#       Location of custom FPM pool configuration file template.
+#
 
 define php::project(
   $source,
@@ -83,6 +89,7 @@ define php::project(
   $redis         = undef,
   $ruby          = undef,
   $php           = undef,
+  $fpm_pool      = undef,
   $server_name   = "${name}.dev",
 ) {
   include boxen::config
@@ -196,9 +203,15 @@ define php::project(
 
     # Spin up a PHP-FPM pool for this project, listening on an Nginx socket
     php::fpm::pool { "${name}-${php}":
-      version => $php,
-      socket  => "${boxen::config::socketdir}/${name}",
-      require => File["${nginx::config::sitesdir}/${name}.conf"],
+      version     => $php,
+      socket_path => "${boxen::config::socketdir}/${name}",
+      require     => File["${nginx::config::sitesdir}/${name}.conf"],
+    }
+
+    if $fpm_pool {
+      Php::Fpm::Pool["${name}-${php}"] {
+        fpm_pool => $fpm_pool
+      }
     }
   }
 

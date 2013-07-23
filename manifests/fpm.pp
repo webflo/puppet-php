@@ -8,7 +8,7 @@
 # will allow the class to be defined multiple times. For example if
 # you're defining it within a project. eg:
 #
-#     include php::fpm::5-4-10
+#     include php::fpm::5_4_10
 #
 define php::fpm(
   $ensure  = present,
@@ -26,9 +26,9 @@ define php::fpm(
   $error_log = "${php::config::logdir}/${version}.fpm.error.log"
 
   if $ensure == present {
-    # Require php version eg. php::5-4-10
+    # Require php version eg. php::5_4_10
     # This will compile, install and set up config dirs if not present
-    require join(['php', join(split($version, '[.]'), '-')], '::')
+    require join(['php', join(split($version, '[.]'), '_')], '::')
 
     # FPM Binary
     $bin = "${php::config::root}/versions/${version}/sbin/php-fpm"
@@ -46,7 +46,7 @@ define php::fpm(
       recurse => true,
       purge   => true,
       force   => true,
-      source  => "puppet:///modules/php/empty-conf-dir",
+      source  => 'puppet:///modules/php/empty-conf-dir',
       require => File[$version_config_root],
     }
 

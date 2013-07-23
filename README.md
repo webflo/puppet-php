@@ -1,5 +1,7 @@
 # PHP Puppet Module for Boxen
 
+[![Build Status](https://travis-ci.org/boxen/puppet-php.png)](https://travis-ci.org/boxen/puppet-php)
+
 Requires the following boxen modules:
 
 * `boxen`
@@ -10,15 +12,21 @@ Requires the following boxen modules:
 * `pkgconfig`
 * `pcre`
 
+The following boxen modules are required if optional PHP extensions are used:
+
+* `couchbase` ([SocalNick/puppet-couchbase](https://github.com/SocalNick/puppet-couchbase)) - Couchbase extension `php::extension::couchbase`
+* `imagemagick` - Imagemagick extension `php::extension::imagick`
+* `redis` - Redis extension `php::extension::redis`
+
 ## Usage
 
 ```puppet
 # Install php 5.4
-require php::5-4
+include php::5_4
 
 # Install a couple of specific minor versions
-require php::5-3-17
-require php::5-4-11
+include php::5_3_17
+include php::5_4_11
 
 # Install a php version and set as the global default php
 class { 'php::global':
@@ -38,11 +46,11 @@ php::extension::apc { "apc for ${version}":
 }
 
 # Set up PHP-FPM as a service running a specific version of PHP
-include php::fpm::5-3-15
+include php::fpm::5_3_15
 
 # Run multiple PHP-FPM services
-include php::fpm::5-4-11
-include php::fpm::5-3-21
+include php::fpm::5_4_11
+include php::fpm::5_3_23
 
 # Spin up a PHP-FPM pool for a project
 # Ensures:
@@ -52,9 +60,9 @@ include php::fpm::5-3-21
 $name = "project-name"
 $version = "5.4.10"
 php::fpm::pool { "${name}-${version}":
-  version => ${version},
-  socket  => "${boxen::config::socketdir}/${name}",
-  require => File["${nginx::config::sitesdir}/${name}.conf"],
+  version     => $version,
+  socket_path => "${boxen::config::socketdir}/${name}",
+  require     => File["${nginx::config::sitesdir}/${name}.conf"],
 }
 
 ```
@@ -76,13 +84,13 @@ class projects::trollin {
     mysql         => true,
     nginx         => 'php/nginx/nginx.conf.erb',
     redis         => true,
-    php           => '5.3.20',
+    php           => '5.3.23',
   }
 }
 ````
 
 With the above, as long as our app is configured to listen to requests at `www/index.php` we can visit [http://trollin.dev/](http://trollin.dev/) to access the app.
 
-In the background this is installing PHP 5.3.20, creating a PHP-FPM service for 5.2.30, and a FPM pool for this project which runs within the FPM service. This then listens on an nginx socket at `"#{ENV['BOXEN_SOCKET_DIR']}"/trollin`.
+In the background this is installing PHP 5.3.23, creating a PHP-FPM service for 5.3.23, and a FPM pool for this project which runs within the FPM service. This then listens on an nginx socket at "#{ENV['BOXEN_SOCKET_DIR']}"/trollin.
 
 The example nginx host template at `templates/nginx/nginx.conf.erb` is also a sample configuration which can be copied to your main boxen module and the nginx template path above altered to match this. This is set up with a basic PHP structure, and Fastcgi params to pass the expected variables from Nginx to PHP-FPM.

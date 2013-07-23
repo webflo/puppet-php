@@ -50,6 +50,20 @@ Puppet::Type.type(:php_version).provide(:php_source) do
       does_exist &&= File.exists? "#{@resource[:phpenv_root]}/versions/#{@resource[:version]}/bin/#{bin}"
     }
 
+    # Including php-fpm if the version is >= 5.3.3
+    # This will fix previously broken installs
+    does_exist &&= File.exists? "#{@resource[:phpenv_root]}/versions/#{@resource[:version]}/sbin/php-fpm" unless @resource[:version].match(/\A5\.3\.[12]\z/)
+
+    # Double check we can run PHP if it exists
+    # Should identify broken versions eg. due to zlib changing...
+    if does_exist
+      output = %x( #{@resource[:phpenv_root]}/versions/#{@resource[:version]}/bin/php -i 2>&1 )
+      php_exitstatus = $?.exitstatus
+      puts "Reinstalling PHP #{@resource[:version]}" unless php_exitstatus == 0
+
+      does_exist &&= (php_exitstatus == 0)
+    end
+
     does_exist
   end
 
@@ -135,6 +149,13 @@ Puppet::Type.type(:php_version).provide(:php_source) do
     # Run buildconf to prepare build system for compilation
     puts "export PHP_AUTOCONF=#{autoconf} && export PHP_AUTOHEADER=#{autoheader} && cd #{@resource[:phpenv_root]}/php-src/ && ./buildconf --force"
     puts %x( export PHP_AUTOCONF=#{autoconf} && export PHP_AUTOHEADER=#{autoheader} && cd #{@resource[:phpenv_root]}/php-src/ && ./buildconf --force )
+    exit_code = $?
+
+    # Ensure buildconf exited successfully
+    unless exit_code == 0
+      puts "Buildconf exit code: #{exit_code}\n\n"
+      raise "Error occured while running buildconf for PHP #{@resource[:version]}"
+    end
 
     # Build configure options
     install_path = "#{@resource[:phpenv_root]}/versions/#{@resource[:version]}"
@@ -144,7 +165,7 @@ Puppet::Type.type(:php_version).provide(:php_source) do
 
     # Right, the hard part - configure for our system
     puts "Configuring PHP #{version}: #{args}"
-    puts %x( cd #{@resource[:phpenv_root]}/php-src/ && ./configure #{args} )
+    puts %x( cd #{@resource[:phpenv_root]}/php-src/ && export ac_cv_exeext='' && ./configure #{args} )
     exit_code = $?
 
     # Ensure Configure exited successfully
@@ -208,14 +229,15 @@ Puppet::Type.type(:php_version).provide(:php_source) do
       "--with-xsl=/usr",
       "--with-gd",
       "--enable-gd-native-ttf",
-      "--with-freetype-dir=/opt/boxen/homebrew/opt/freetype",
-      "--with-jpeg-dir=/opt/boxen/homebrew/opt/jpeg",
-      "--with-png-dir=/opt/boxen/homebrew/opt/libpng",
-      "--with-gettext=/opt/boxen/homebrew/opt/gettext",
-      "--with-gmp=/opt/boxen/homebrew/opt/gmp",
-      "--with-zlib=/opt/boxen/homebrew/opt/zlib",
+      "--with-freetype-dir=#{@resource[:homebrew_path]}/opt/freetype",
+      "--with-jpeg-dir=#{@resource[:homebrew_path]}/opt/jpeg",
+      "--with-png-dir=#{@resource[:homebrew_path]}/opt/libpng",
+      "--with-gettext=#{@resource[:homebrew_path]}/opt/gettext",
+      "--with-gmp=#{@resource[:homebrew_path]}/opt/gmp",
+      "--with-zlib=#{@resource[:homebrew_path]}/opt/zlibphp",
       "--with-snmp=/usr",
       "--with-libedit",
+      "--with-libevent-dir=#{@resource[:homebrew_path]}/opt/libevent",
       "--with-mhash",
       "--with-curl",
       "--with-openssl=/usr",
@@ -226,9 +248,12 @@ Puppet::Type.type(:php_version).provide(:php_source) do
       "--with-mysql=mysqlnd",
       "--with-pdo-mysql=mysqlnd",
 
-      "--enable-fpm",
     ]
 
+    # PHP-FPM isn't available until 5.3.3
+    args << "--enable-fpm" unless @resource[:version].match(/\A5\.3\.[12]\z/)
+
+    args
   end
 
   def autoconf

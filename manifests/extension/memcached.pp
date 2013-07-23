@@ -8,16 +8,16 @@
 #     }
 #
 define php::extension::memcached(
-  $version = '2.1.0',
-  $php
+  $php,
+  $version = '2.1.0'
 ) {
   include boxen::config
   require memcached::lib
 
   require php::config
-  # Require php version eg. php::5-4-10
+  # Require php version eg. php::5_4_10
   # This will compile, install and set up config dirs if not present
-  require join(['php', join(split($php, '[.]'), '-')], '::')
+  require join(['php', join(split($php, '[.]'), '_')], '::')
 
 
   $extension = 'memcached'
@@ -31,21 +31,21 @@ define php::extension::memcached(
   $configure_params = "--with-libmemcached-dir=${boxen::config::homebrewdir}/opt/libmemcached"
 
   php_extension { $name:
-    extension      => $extension,
-    version        => $version,
-    package_name   => $package_name,
-    package_url    => $url,
-    homebrew_path  => $boxen::config::homebrewdir,
-    phpenv_root    => $php::config::root,
-    php_version    => $php,
-    cache_dir      => $php::config::extensioncachedir,
+    extension        => $extension,
+    version          => $version,
+    package_name     => $package_name,
+    package_url      => $url,
+    homebrew_path    => $boxen::config::homebrewdir,
+    phpenv_root      => $php::config::root,
+    php_version      => $php,
+    cache_dir        => $php::config::extensioncachedir,
     configure_params => $configure_params,
   }
 
   # Add config file once extension is installed
 
   file { "${php::config::configdir}/${php}/conf.d/${extension}.ini":
-    content => template("php/extensions/${extension}.ini.erb"),
+    content => template('php/extensions/generic.ini.erb'),
     require => Php_extension[$name],
   }
 
