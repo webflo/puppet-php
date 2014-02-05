@@ -165,7 +165,19 @@ Puppet::Type.type(:php_version).provide(:php_source) do
 
     # Right, the hard part - configure for our system
     puts "Configuring PHP #{version}: #{args}"
-    puts %x( cd #{@resource[:phpenv_root]}/php-src/ && export ac_cv_exeext='' && ./configure #{args} )
+    command = [
+      "cd #{@resource[:phpenv_root]}/php-src/",
+      "export ac_cv_exeext=''"
+    ]
+
+    unless bison.nil?
+      puts bison
+      command << "export YACC='#{bison}'"
+    end
+
+    command << "./configure #{args}"
+    command = command.join " && "
+    puts %x( #{command} )
     exit_code = $?
 
     # Ensure Configure exited successfully
@@ -272,6 +284,21 @@ Puppet::Type.type(:php_version).provide(:php_source) do
     autoheader << "213" if @resource[:version].match(/5\.3\../)
 
     autoheader
+  end
+
+  def bison
+    bison = nil
+    version = @resource[:version].split "."
+    version.map! { |v| v.to_i }
+
+    if
+      (version[0] == 5 && version[1] == 3 && version[2] >= 28) || # PHP 5.3.27+
+      (version[0] == 5 && version[1] == 4 && version[2] >= 19) ||
+      (version[0] == 5 && version[1] == 5 && version[2] >= 0)
+        bison = "/opt/boxen/homebrew/opt/bison26/bin/bison"
+    end
+
+    bison
   end
 
 end

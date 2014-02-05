@@ -97,6 +97,20 @@ class php {
     ensure => '1.2.8-boxen1',
   }
 
+  # Install dupe version of bison as tapping homebrew.
+  #
+  # Bison 2.6 is used for the follwing php versions:
+  # - PHP 5.3.28 (and higher)
+  # - PHP 5.4.18 (and higher)
+  # - PHP 5.5.0 (and higher)
+  homebrew::formula { 'bison26':
+    before => Package['boxen/brews/bison26'],
+  }
+
+  package { 'boxen/brews/bison26':
+    ensure => '2.6.4-boxen1',
+  }
+
   # Set up phpenv
 
   $git_init   = 'git init .'
