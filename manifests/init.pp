@@ -2,6 +2,10 @@
 #
 # This module installs a full phpenv & php-build driven php stack
 #
+# Usage:
+#
+#     include php
+#
 class php {
   require php::config
   require homebrew
@@ -15,7 +19,7 @@ class php {
   # Get rid of any pre-installed packages
   package { ['phpenv', 'php-build']: ensure => absent; }
 
-  $phpenv_version = '9688906ae527e4068d96d5d8e0579973ecfdb5de' # Pin to latest version of dev branch as of 2013-02-20
+  $phpenv_version = '6499bb6c7b645af3f4e67f7e17708d5ee208453f' # Pin to latest version of dev branch as of 2013-10-11
 
   file {
     [
@@ -58,7 +62,6 @@ class php {
   # Resolve dependencies
 
   package { [
-      'freetype',
       'gmp',
       'icu4c',
       'jpeg',
@@ -66,6 +69,18 @@ class php {
       'mcrypt',
     ]:
     provider => homebrew,
+  }
+
+  # Install freetype version 2.4.11 due to conflict with GD
+  # See https://github.com/boxen/puppet-php/issues/25
+
+  homebrew::formula { 'freetypephp':
+    source => 'puppet:///modules/php/brews/freetype.rb',
+    before => Package['boxen/brews/freetypephp'],
+  }
+
+  package { 'boxen/brews/freetypephp':
+    ensure => '2.4.11',
   }
 
   # Need autoconf version less than 2.59 for php 5.3 (ewwwww)

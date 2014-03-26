@@ -16,6 +16,7 @@ define php::version(
 ) {
   require php
   include boxen::config
+  include mysql::config
 
   # Install location
   $dest = "${php::config::root}/versions/${version}"
@@ -105,7 +106,7 @@ define php::version(
       require       => [
         Repository["${php::config::root}/php-src"],
         Package['gettext'],
-        Package['freetype'],
+        Package['boxen/brews/freetypephp'],
         Package['gmp'],
         Package['icu4c'],
         Package['jpeg'],

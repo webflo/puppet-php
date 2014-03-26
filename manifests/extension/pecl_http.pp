@@ -3,8 +3,8 @@
 # Usage:
 #
 #     php::extension::pecl_http { 'http for 5.4.10':
-#       version   => '1.7.5'
-#       php       => '5.4.10',
+#       php     => '5.4.10',
+#       version => '1.7.5'
 #     }
 #
 define php::extension::pecl_http(
@@ -12,7 +12,6 @@ define php::extension::pecl_http(
   $version = '1.7.5'
 ) {
   include boxen::config
-  require zookeeper
 
   require php::config
   # Require php version eg. php::5_4_10

@@ -1,6 +1,6 @@
 # PHP Puppet Module for Boxen
 
-[![Build Status](https://travis-ci.org/boxen/puppet-php.png)](https://travis-ci.org/boxen/puppet-php)
+[![Build Status](https://travis-ci.org/boxen/puppet-php.png?branch=master)](https://travis-ci.org/boxen/puppet-php)
 
 Requires the following boxen modules:
 
@@ -12,6 +12,7 @@ Requires the following boxen modules:
 * `pkgconfig`
 * `pcre`
 * `libpng`
+* `mysql`
 
 The following boxen modules are required if optional PHP extensions are used:
 
@@ -28,6 +29,9 @@ include php::5_4
 # Install a couple of specific minor versions
 include php::5_3_17
 include php::5_4_11
+
+# Install Composer globally on your PATH
+include php::composer
 
 # Install a php version and set as the global default php
 class { 'php::global':
