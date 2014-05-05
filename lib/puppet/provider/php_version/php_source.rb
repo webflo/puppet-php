@@ -164,20 +164,17 @@ Puppet::Type.type(:php_version).provide(:php_source) do
     args = args.join(" ")
 
     # Right, the hard part - configure for our system
-    puts "Configuring PHP #{version}: #{args}"
-    command = [
-      "cd #{@resource[:phpenv_root]}/php-src/",
-      "export ac_cv_exeext=''"
-    ]
 
-    unless bison.nil?
-      puts bison
-      command << "export YACC='#{bison}'"
-    end
+    # Some env variables are needed for configuration
+    env = "export ac_cv_exeext=''"
 
-    command << "./configure #{args}"
-    command = command.join " && "
-    puts %x( #{command} )
+    # PHP 5.5+ requires a later version of Bison than OSX provides (2.6 vs 2.3)
+    env << " && export PATH=/opt/boxen/homebrew/opt/bisonphp26/bin:$PATH" unless @resource[:version].match(/\A5\.[34]/)
+
+    # Construct and run configure command
+    configure_command = "cd #{@resource[:phpenv_root]}/php-src/ && #{env} && ./configure #{args}"
+    puts "Configuring PHP #{version}: #{configure_command}"
+    puts %x( #{configure_command} )
     exit_code = $?
 
     # Ensure Configure exited successfully
@@ -284,21 +281,6 @@ Puppet::Type.type(:php_version).provide(:php_source) do
     autoheader << "213" if @resource[:version].match(/5\.3\../)
 
     autoheader
-  end
-
-  def bison
-    bison = nil
-    version = @resource[:version].split "."
-    version.map! { |v| v.to_i }
-
-    if
-      (version[0] == 5 && version[1] == 3 && version[2] >= 28) || # PHP 5.3.27+
-      (version[0] == 5 && version[1] == 4 && version[2] >= 19) ||
-      (version[0] == 5 && version[1] == 5 && version[2] >= 0)
-        bison = "/opt/boxen/homebrew/opt/bison26/bin/bison"
-    end
-
-    bison
   end
 
 end
