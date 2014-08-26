@@ -37,6 +37,7 @@ define php::extension::intl(
     php_version      => $php,
     cache_dir        => $php::config::extensioncachedir,
     configure_params => $configure_params,
+    provider         => pecl,
   }
 
   # Add config file once extension is installed

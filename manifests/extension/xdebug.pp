@@ -33,6 +33,7 @@ define php::extension::xdebug(
     phpenv_root    => $php::config::root,
     php_version    => $php,
     cache_dir      => $php::config::extensioncachedir,
+    provider       => pecl,
   }
 
   # Add config file once extension is installed

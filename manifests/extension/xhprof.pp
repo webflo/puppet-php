@@ -33,7 +33,8 @@ define php::extension::xhprof(
     phpenv_root    => $php::config::root,
     php_version    => $php,
     cache_dir      => $php::config::extensioncachedir,
-    extension_dir  => 'extension'
+    extension_dir  => 'extension',
+    provider       => pecl,
   }
 
   # Add config file once extension is installed
