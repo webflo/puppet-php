@@ -25,6 +25,7 @@ define php::extension::apc(
   $module_path = "${php::config::root}/versions/${php}/modules/${extension}.so"
 
   php_extension { $name:
+    provider       => 'pecl',
     extension      => $extension,
     version        => $version,
     package_name   => $package_name,
