@@ -9,7 +9,7 @@
 #
 define php::extension::imagick(
   $php,
-  $version = '3.0.0'
+  $version = '3.1.2'
 ) {
   require php::config
   require imagemagick
