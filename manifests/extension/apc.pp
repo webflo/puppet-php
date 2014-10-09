@@ -38,7 +38,7 @@ define php::extension::apc(
 
   # Add config file once extension is installed
 
-  file { "${php::config::configdir}/${php}/conf.d/${extension}.ini":
+  file { "${php::config::configdir}/${php}/conf.d/${php::config::configprefix}${extension}.ini":
     content => template($config_template),
     require => Php_extension[$name],
   }

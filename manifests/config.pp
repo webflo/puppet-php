@@ -16,4 +16,5 @@ class php::config (
   $pluginsdir        = "${root}/plugins"
   $cachedir          = "${php::config::datadir}/cache"
   $extensioncachedir = "${php::config::datadir}/cache/extensions"
+  $configprefix      = "10-"
 }
