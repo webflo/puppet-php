@@ -7,10 +7,11 @@
 #     }
 #
 define php::fpm::service(
-  $version           = $name,
-  $ensure            = running,
+  $version = $name,
+  $ensure  = running,
 ) {
   require php::config
+  include php::fpm::fastcgi
 
   # Config file locations
   $fpm_config = "${php::config::configdir}/${version}/php-fpm.conf"
@@ -35,8 +36,9 @@ define php::fpm::service(
     }
 
     service { "dev.php-fpm.${version}":
-      ensure  => running,
-      subscribe  => File["/Library/LaunchDaemons/dev.php-fpm.${version}.plist"]
+      ensure    => running,
+      subscribe => File["/Library/LaunchDaemons/dev.php-fpm.${version}.plist"],
+      require   => Class['php::fpm::fastcgi'],
     }
 
   } else {

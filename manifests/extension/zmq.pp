@@ -3,20 +3,20 @@
 # Usage:
 #
 #     php::extension::zmq { 'zmq for 5.4.10':
-#       version   => '1.0.5'
-#       php       => '5.4.10',
+#       php     => '5.4.10',
+#       version => '1.0.5'
 #     }
 #
 define php::extension::zmq(
-  $version = '1.0.5',
-  $php
+  $php,
+  $version = '1.0.5'
 ) {
   require zeromq
 
   require php::config
-  # Require php version eg. php::5-4-10
+  # Require php version eg. php::5_4_10
   # This will compile, install and set up config dirs if not present
-  require join(['php', join(split($php, '[.]'), '-')], '::')
+  require join(['php', join(split($php, '[.]'), '_')], '::')
 
   $extension = 'zmq'
 
@@ -45,8 +45,8 @@ define php::extension::zmq(
 
   # Add config file once extension is installed
 
-  file { "${php::config::configdir}/${php}/conf.d/${extension}.ini":
-    content => template("php/extensions/${extension}.ini.erb"),
+  file { "${php::config::configdir}/${php}/conf.d/${php::config::configprefix}${extension}.ini":
+    content => template('php/extensions/generic.ini.erb'),
     require => Php_extension[$name],
   }
 

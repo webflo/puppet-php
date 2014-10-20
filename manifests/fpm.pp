@@ -8,13 +8,14 @@
 # will allow the class to be defined multiple times. For example if
 # you're defining it within a project. eg:
 #
-#     include php::fpm::5-4-10
+#     include php::fpm::5_4_10
 #
 define php::fpm(
   $ensure  = present,
   $version = $name,
 ){
   require php::config
+  require php::fpm::config
 
   # Config file locations
   $version_config_root = "${php::config::configdir}/${version}"
@@ -26,9 +27,9 @@ define php::fpm(
   $error_log = "${php::config::logdir}/${version}.fpm.error.log"
 
   if $ensure == present {
-    # Require php version eg. php::5-4-10
+    # Require php version eg. php::5_4_10
     # This will compile, install and set up config dirs if not present
-    require join(['php', join(split($version, '[.]'), '-')], '::')
+    require join(['php', join(split($version, '[.]'), '_')], '::')
 
     # FPM Binary
     $bin = "${php::config::root}/versions/${version}/sbin/php-fpm"
@@ -40,13 +41,11 @@ define php::fpm(
     }
 
     # Set up FPM Pool config directory
-    # Purge non managed files within this, to ensure we have no conflicts
     file { $fpm_pool_config_dir:
       ensure  => directory,
       recurse => true,
-      purge   => true,
       force   => true,
-      source  => "puppet:///modules/php/empty-conf-dir",
+      source  => 'puppet:///modules/php/empty-conf-dir',
       require => File[$version_config_root],
     }
 
@@ -54,8 +53,9 @@ define php::fpm(
     # Listen on a fake socket for now
     $pool_name    = $version
     $socket_path  = "${boxen::config::socketdir}/${version}"
-    $pm           = 'static'
-    $max_children = 1
+    $pm           = $php::fpm::config::pm
+    $max_children = $php::fpm::config::pm_max_children
+    $request_terminate_timeout = $php::fpm::config::request_terminate_timeout
 
     # Additional non required options (as pm = static for this pool):
     $start_servers     = 1

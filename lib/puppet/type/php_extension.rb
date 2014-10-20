@@ -21,7 +21,7 @@ Puppet::Type.newtype(:php_extension) do
   end
 
   newparam(:version) do
-    defaultto '>= 0'
+    defaultto ''
   end
 
   newparam(:package_name) do
@@ -51,8 +51,9 @@ Puppet::Type.newtype(:php_extension) do
     defaultto ''
   end
 
-  newparam(:source) do
-    defaultto :pecl
+  # Some PECL modules have a different module layout and the php extension
+  # source in not in the root directory (e.g. xhprof)
+  newparam(:extension_dir) do
   end
 
 end

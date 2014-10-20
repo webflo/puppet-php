@@ -8,7 +8,7 @@
 # using this class directly, which allows the class to be defined multiple
 # times - eg. if you define it within multiple projects. For example:
 #
-#     include php::5-3-20
+#     include php::5_3_20
 #
 define php::version(
   $ensure    = 'installed',
@@ -16,6 +16,7 @@ define php::version(
 ) {
   require php
   include boxen::config
+  include mysql::config
 
   # Install location
   $dest = "${php::config::root}/versions/${version}"
@@ -50,7 +51,8 @@ define php::version(
         $version_data_root,
       ]:
       ensure => absent,
-      force  => true
+      force  => true,
+      backup => false
     }
 
   } else {
@@ -84,14 +86,14 @@ define php::version(
 
     file { $php_ini:
       content => template('php/php.ini.erb'),
-      require => File["${version_config_root}"]
+      require => File[$version_config_root]
     }
 
     # Log files
 
     file { $error_log:
       owner => $::boxen_user,
-      mode  => 644,
+      mode  => '0644',
     }
 
     # Install PHP!
@@ -105,16 +107,17 @@ define php::version(
       require       => [
         Repository["${php::config::root}/php-src"],
         Package['gettext'],
-        Package['freetype'],
+        Package['boxen/brews/freetypephp'],
         Package['gmp'],
         Package['icu4c'],
         Package['jpeg'],
         Package['libpng'],
         Package['mcrypt'],
-        Package['homebrew/dupes/zlib'],
+        Package['boxen/brews/zlibphp'],
         Package['autoconf'],
         Package['boxen/brews/autoconf213'],
       ],
+      notify        => Exec["phpenv-rehash-post-install-${version}"],
     }
 
     # Fix permissions for php versions installed prior to 0.3.5 of this module
@@ -124,6 +127,13 @@ define php::version(
       group   => 'staff',
       recurse => true,
       require => Php_version[$version],
+    }
+
+    # Rehash phpenv shims when a new version is installed
+    exec { "phpenv-rehash-post-install-${version}":
+      command     => "/bin/rm -rf ${php::config::root}/shims && PHPENV_ROOT=${php::config::root} ${php::config::root}/bin/phpenv rehash",
+      require     => Php_version[$version],
+      refreshonly => true,
     }
 
     # PEAR cruft
@@ -148,6 +158,16 @@ define php::version(
     exec { "pear-${version}-download_dir":
       command => "${dest}/bin/pear config-set download_dir ${php::config::datadir}/pear",
       unless  => "${dest}/bin/pear config-get download_dir | grep -i ${php::config::datadir}/pear",
+      require => [
+        Php_version[$version],
+        File["${php::config::datadir}/pear"],
+      ],
+    }
+
+    # Set temp_dir for PEAR
+    exec { "pear-${version}-temp_dir":
+      command => "${dest}/bin/pear config-set temp_dir ${php::config::datadir}/pear",
+      unless  => "${dest}/bin/pear config-get temp_dir | grep -i ${php::config::datadir}/pear",
       require => [
         Php_version[$version],
         File["${php::config::datadir}/pear"],
